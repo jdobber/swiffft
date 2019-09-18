@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -12,12 +11,14 @@ import (
 	iiiflevel "github.com/jdobber/go-iiif-mod/lib/level"
 	iiifparser "github.com/jdobber/go-iiif-mod/lib/parser"
 	iiifprofile "github.com/jdobber/go-iiif-mod/lib/profile"
+
 	echo "github.com/labstack/echo/v4"
 	middleware "github.com/labstack/echo/v4/middleware"
 	echolog "github.com/labstack/gommon/log"
 	"github.com/whosonfirst/go-sanitize"
 
 	caches "github.com/jdobber/swiffft/lib/caches"
+	"github.com/jdobber/swiffft/lib/cmd"
 	sources "github.com/jdobber/swiffft/lib/sources"
 )
 
@@ -35,21 +36,22 @@ func check(e error) {
 
 func main() {
 	var err error
-	var cfg = flag.String("config", "", "Path to a valid go-iiif config file")
-	var host = flag.String("host", "http://127.0.0.1:8080", "Bind the server to this host")
-	Endpoint = flag.String("endpoint", "http://127.0.0.1:8080/iiif", "Use this endpoint in profiles")
+	//var cfg = flag.String("config", "", "Path to a valid go-iiif config file")
+	//var host = flag.String("host", "http://127.0.0.1:8080", "Bind the server to this host")
+	//Endpoint = flag.String("endpoint", "http://127.0.0.1:8080/iiif", "Use this endpoint in profiles")
 
-	flag.Parse()
+	//flag.Parse()
+	cmd.Init()
 
-	if *cfg == "" {
+	if cmd.Args.Config == "" {
 		log.Fatal("Missing config file")
 	}
 
-	Config, err = iiifconfig.NewConfigFromFlag(*cfg)
+	Config, err = iiifconfig.NewConfigFromFlag(cmd.Args.Config)
 	check(err)
 
 	// Source, err = sources.NewFileSource("/home/jens/Bilder")
-	Source, err = sources.NewMinioSource()
+	Source, err = sources.NewMinioSource(cmd.Args.MinioOptions)
 	check(err)
 
 	Cache, err = caches.NewFastCache()
@@ -95,7 +97,7 @@ func main() {
 	g.GET("/:identifier/:region/:size/:rotation/:quality", ImageHandler())
 	g.GET("/:identifier/info.json", InfoHandler())
 
-	e.Logger.Fatal(e.Start(*host))
+	e.Logger.Fatal(e.Start(cmd.Args.Host))
 }
 
 func NewIIIFQueryParser(c echo.Context) (*iiifparser.IIIFQueryParser, error) {
@@ -149,10 +151,10 @@ func InfoHandler() echo.HandlerFunc {
 		image, err := iiifimage.NewNativeImage(identifier, body)
 		check(err)
 
-		level, err := iiiflevel.NewLevelFromConfig(Config, Endpoint)
+		level, err := iiiflevel.NewLevelFromConfig(Config, &cmd.Args.Endpoint)
 		check(err)
 
-		profile, err := iiifprofile.NewProfile(Endpoint, image, level)
+		profile, err := iiifprofile.NewProfile(&cmd.Args.Endpoint, image, level)
 		check(err)
 
 		return c.JSON(http.StatusOK, profile)
@@ -186,7 +188,7 @@ func ImageHandler() echo.HandlerFunc {
 		image, err := iiifimage.NewNativeImage(identifier, body)
 		check(err)
 
-		level, err := iiiflevel.NewLevelFromConfig(Config, Endpoint)
+		level, err := iiiflevel.NewLevelFromConfig(Config, &cmd.Args.Endpoint)
 		check(err)
 
 		iiifparams, err := p.GetIIIFParameters()
