@@ -10,4 +10,5 @@ require (
 	github.com/labstack/gommon v0.3.0
 	github.com/minio/minio-go/v6 v6.0.35
 	github.com/whosonfirst/go-sanitize v0.1.0
+	github.com/wrfly/gua v1.0.1
 )

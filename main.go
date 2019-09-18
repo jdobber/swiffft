@@ -22,10 +22,12 @@ import (
 	sources "github.com/jdobber/swiffft/lib/sources"
 )
 
-var Endpoint *string
-var Config *iiifconfig.Config
-var Source sources.Source
-var Cache caches.Cache
+var (
+	Config *iiifconfig.Config
+	Source sources.Source
+	Cache  caches.Cache
+	Args   cmd.CommandOptions
+)
 
 func check(e error) {
 	if e != nil {
@@ -36,49 +38,26 @@ func check(e error) {
 
 func main() {
 	var err error
-	//var cfg = flag.String("config", "", "Path to a valid go-iiif config file")
-	//var host = flag.String("host", "http://127.0.0.1:8080", "Bind the server to this host")
-	//Endpoint = flag.String("endpoint", "http://127.0.0.1:8080/iiif", "Use this endpoint in profiles")
 
-	//flag.Parse()
-	cmd.Init()
+	Args = cmd.Init()
 
-	if cmd.Args.Config == "" {
+	if Args.Config == "" {
 		log.Fatal("Missing config file")
 	}
 
-	Config, err = iiifconfig.NewConfigFromFlag(cmd.Args.Config)
+	Config, err = iiifconfig.NewConfigFromFlag(Args.Config)
 	check(err)
 
 	// Source, err = sources.NewFileSource("/home/jens/Bilder")
-	Source, err = sources.NewMinioSource(cmd.Args.MinioOptions)
+	Source, err = sources.NewMinioSource(Args.MinioOptions)
 	check(err)
 
 	Cache, err = caches.NewFastCache()
 	check(err)
 
-	//p, err := iiifmod.parser.NewIIIFQueryParser(*uri, nil)
-	//check(err)
-
 	/*
-		info_handler, err := iiifhttp.InfoHandler(config)
-
-		if err != nil {
-			log.Fatal(err)
-		}
+		INIT SERVER AND ROUTES
 	*/
-	//image_handler := iiifhttp.ImageHandler2(config, images_cache, derivatives_cache)
-
-	/*
-		ping_handler, err := iiifhttp.PingHandler()
-
-		if err != nil {
-			log.Fatal(err)
-		}
-	*/
-
-	//expvar_handler := iiifhttp.ExpvarHandler2(*host)
-
 	e := echo.New()
 	e.Use(middleware.CORS())
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
@@ -97,7 +76,7 @@ func main() {
 	g.GET("/:identifier/:region/:size/:rotation/:quality", ImageHandler())
 	g.GET("/:identifier/info.json", InfoHandler())
 
-	e.Logger.Fatal(e.Start(cmd.Args.Host))
+	e.Logger.Fatal(e.Start(Args.Host))
 }
 
 func NewIIIFQueryParser(c echo.Context) (*iiifparser.IIIFQueryParser, error) {
@@ -151,10 +130,10 @@ func InfoHandler() echo.HandlerFunc {
 		image, err := iiifimage.NewNativeImage(identifier, body)
 		check(err)
 
-		level, err := iiiflevel.NewLevelFromConfig(Config, &cmd.Args.Endpoint)
+		level, err := iiiflevel.NewLevelFromConfig(Config, &Args.Endpoint)
 		check(err)
 
-		profile, err := iiifprofile.NewProfile(&cmd.Args.Endpoint, image, level)
+		profile, err := iiifprofile.NewProfile(&Args.Endpoint, image, level)
 		check(err)
 
 		return c.JSON(http.StatusOK, profile)
@@ -188,7 +167,7 @@ func ImageHandler() echo.HandlerFunc {
 		image, err := iiifimage.NewNativeImage(identifier, body)
 		check(err)
 
-		level, err := iiiflevel.NewLevelFromConfig(Config, &cmd.Args.Endpoint)
+		level, err := iiiflevel.NewLevelFromConfig(Config, &Args.Endpoint)
 		check(err)
 
 		iiifparams, err := p.GetIIIFParameters()

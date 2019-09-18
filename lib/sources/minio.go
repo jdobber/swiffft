@@ -2,6 +2,7 @@ package sources
 
 import (
 	"io/ioutil"
+	"os"
 
 	minio "github.com/minio/minio-go/v6"
 )
@@ -13,29 +14,19 @@ type MinioSource struct {
 }
 
 type MinioOptions struct {
-	MinioEndpoint  string `help:The Minio endpoint to use."`
-	MinioBucket    string `help:"The bucket to use."`
-	MinioUseSSL    bool   `help:"Use ssl."`
-	MinioAccessKey string `arg:"env:MINIO_ACCESS_KEY" help:"read the access key from env var MINIO_ACCESS_KEY"`
-	MinioSecretKey string `arg:"env:MINIO_SECRET_KEY"`
-}
-
-func MinioDefaultOptions() MinioOptions {
-	return MinioOptions{
-		MinioEndpoint: "localhost:4000",
-		MinioBucket:   "iiif",
-		MinioUseSSL:   false,
-	}
+	Endpoint string `name:"minio.endpoint" desc:"The Minio endpoint to use."`
+	Bucket   string `name:"minio.bucket" desc:"The bucket to use."`
+	UseSSL   bool   `name:"minio.usessl" desc:"Use ssl."`
 }
 
 func NewMinioSource(opts MinioOptions) (*MinioSource, error) {
 
 	// Initialize minio client object.
 	minioClient, err := minio.New(
-		opts.MinioEndpoint,
-		opts.MinioAccessKey,
-		opts.MinioSecretKey,
-		opts.MinioUseSSL)
+		opts.Endpoint,
+		os.Getenv("MINIO_ACCESS_KEY"),
+		os.Getenv("MINIO_SECRET_KEY"),
+		opts.UseSSL)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +41,7 @@ func NewMinioSource(opts MinioOptions) (*MinioSource, error) {
 
 func (c *MinioSource) Read(key string) ([]byte, error) {
 
-	object, err := c.Client.GetObject(c.Opts.MinioBucket, key, minio.GetObjectOptions{})
+	object, err := c.Client.GetObject(c.Opts.Bucket, key, minio.GetObjectOptions{})
 	defer object.Close()
 
 	if err != nil {
