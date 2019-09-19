@@ -15,8 +15,8 @@ type MinioSource struct {
 
 type MinioOptions struct {
 	Endpoint string `name:"minio.endpoint" desc:"The Minio endpoint to use."`
-	Bucket   string `name:"minio.bucket" desc:"The bucket to use."`
-	UseSSL   bool   `name:"minio.usessl" desc:"Use ssl."`
+	Bucket   string `name:"minio.bucket" desc:"The Minio bucket to use."`
+	UseSSL   bool   `name:"minio.usessl" desc:"Use ssl for Minio."`
 }
 
 func NewMinioSource(opts MinioOptions) (*MinioSource, error) {

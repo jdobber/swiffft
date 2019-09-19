@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/VictoriaMetrics/fastcache v1.5.1
 	github.com/alexflint/go-arg v1.1.0
+	github.com/go-iiif/go-iiif v1.3.1
 	github.com/jdobber/go-iiif-mod v0.1.0-alpha.1
 	github.com/labstack/echo/v4 v4.1.10
 	github.com/labstack/gommon v0.3.0

@@ -1,13 +1,18 @@
 package cmd
 
 import (
+	"encoding/json"
+	"fmt"
+
 	sources "github.com/jdobber/swiffft/lib/sources"
 	"github.com/wrfly/gua"
 )
 
 type SourceOptions struct {
-	Source string `help:"The source to use [null=default, file, minio]."`
+	Sources []string `name:"sources" default:"file" desc:"An ordered list of sources, eg. 'minio' or 'minio file'."`
+
 	sources.MinioOptions
+	sources.FileSourceOptions
 }
 
 type CommandOptions struct {
@@ -24,6 +29,9 @@ func Init() CommandOptions {
 	if err := gua.Parse(args); err != nil {
 		panic(err)
 	}
+
+	bs, _ := json.MarshalIndent(args, "", "  ")
+	fmt.Printf("%s\n", bs)
 
 	return *args
 

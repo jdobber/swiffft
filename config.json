@@ -2,11 +2,6 @@
 	"level": {
 		"compliance": "2"
 	},	
-	"graphics": {
-		"source": {
-			"name": "VIPS"
-		}
-	},
 	"features": {
 		"enable": {
 			"size": [
