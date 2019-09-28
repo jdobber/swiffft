@@ -2,6 +2,7 @@ package sources
 
 import (
 	"io/ioutil"
+	"os"
 
 	minio "github.com/minio/minio-go/v6"
 )
@@ -9,21 +10,30 @@ import (
 type MinioSource struct {
 	Source
 	Client *minio.Client
+	Opts   MinioOptions
 }
 
-func NewMinioSource() (*MinioSource, error) {
+type MinioOptions struct {
+	Endpoint string `name:"minio.endpoint" desc:"The Minio endpoint to use."`
+	Bucket   string `name:"minio.bucket" desc:"The Minio bucket to use."`
+	UseSSL   bool   `name:"minio.usessl" desc:"Use ssl for Minio."`
+}
 
-	// Use a secure connection.
-	ssl := false
+func NewMinioSource(opts MinioOptions) (*MinioSource, error) {
 
 	// Initialize minio client object.
-	minioClient, err := minio.New("localhost:4000", "n365-test", "n365-test", ssl)
+	minioClient, err := minio.New(
+		opts.Endpoint,
+		os.Getenv("MINIO_ACCESS_KEY"),
+		os.Getenv("MINIO_SECRET_KEY"),
+		opts.UseSSL)
 	if err != nil {
 		return nil, err
 	}
 
 	c := MinioSource{
 		Client: minioClient,
+		Opts:   opts,
 	}
 
 	return &c, nil
@@ -31,7 +41,7 @@ func NewMinioSource() (*MinioSource, error) {
 
 func (c *MinioSource) Read(key string) ([]byte, error) {
 
-	object, err := c.Client.GetObject("iiif", key, minio.GetObjectOptions{})
+	object, err := c.Client.GetObject(c.Opts.Bucket, key, minio.GetObjectOptions{})
 	defer object.Close()
 
 	if err != nil {

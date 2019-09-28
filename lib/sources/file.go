@@ -9,6 +9,10 @@ type FileSource struct {
 	prefix string
 }
 
+type FileSourceOptions struct {
+	Prefix string `name:"file.prefix" desc:"The basepath for images."`
+}
+
 func NewFileSource(prefix string) (*FileSource, error) {
 
 	c := FileSource{
