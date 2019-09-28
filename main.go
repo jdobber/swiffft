@@ -71,6 +71,10 @@ func main() {
 
 	//e.GET("/debug/vars", expvar_handler)
 
+	// METRICS Routes
+	e.GET("/metrics", handlers.MetricsHandler())
+
+	// IIIF Routes
 	g := e.Group("/iiif")
 	g.GET("/:identifier/:region/:size/:rotation/:quality", handlers.ImageHandler())
 	g.GET("/:identifier/info.json", handlers.InfoHandler())
