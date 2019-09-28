@@ -20,19 +20,23 @@ func ImageHandler() echo.HandlerFunc {
 		var body []byte
 		var err error
 
+		url := c.Request().URL.String()
+
 		p, _ := NewIIIFQueryParser(c)
 		format, _ := p.GetIIIFParameter("format")
 
-		// check cache
-		url := c.Request().URL.String()
-		body, err = cmd.Cache.Get(url)
-		if err == nil {
-			return c.Blob(http.StatusOK, "image/"+format, body)
+		// check cache for requested tile
+		if cmd.Args.CacheOptions.Tiles {
+			body, err = cmd.Cache.Get(url)
+			if err == nil {
+				return c.Blob(http.StatusOK, "image/"+format, body)
+			}
 		}
 
 		// not in cache -> go on
 		identifier, _ := p.GetIIIFParameter("identifier")
 
+		// check cache for image
 		body, err = cmd.Cache.Get(identifier)
 		if err != nil {
 
@@ -41,9 +45,11 @@ func ImageHandler() echo.HandlerFunc {
 				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 			}
 
-			err = cmd.Cache.Set(identifier, body)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, "could not set item into cache")
+			if cmd.Args.CacheOptions.Images {
+				err = cmd.Cache.Set(identifier, body)
+				if err != nil {
+					return echo.NewHTTPError(http.StatusInternalServerError, "could not set item into cache")
+				}
 			}
 		}
 
@@ -92,9 +98,11 @@ func ImageHandler() echo.HandlerFunc {
 		}
 
 		// set into cache
-		err = cmd.Cache.Set(url, data)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "could not set item into cache")
+		if cmd.Args.CacheOptions.Tiles {
+			err = cmd.Cache.Set(url, data)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, "could not set item into cache")
+			}
 		}
 
 		// return image

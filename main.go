@@ -46,8 +46,8 @@ func main() {
 	}
 
 	if cmd.Args.UseCache {
-		cmd.Cache, err = caches.NewFastCache()
-		log.Println("Use FastCache.")
+		cmd.Cache, err = caches.NewFastCache(cmd.Args.CacheOptions.Size)
+		log.Printf("Use FastCache with size %d MB.\n", cmd.Args.CacheOptions.Size)
 	} else {
 		cmd.Cache, err = caches.NewNullCache()
 	}

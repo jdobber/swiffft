@@ -22,14 +22,16 @@ func InfoHandler() echo.HandlerFunc {
 		var body []byte
 		var err error
 
-		p, _ := NewIIIFQueryParser(c)
-		//format, _ := p.GetIIIFParameter("format")
-
-		// check cache
 		url := c.Request().URL.String()
-		body, err = cmd.Cache.Get(url)
-		if err == nil {
-			return c.Blob(http.StatusOK, "application/json", body)
+
+		p, _ := NewIIIFQueryParser(c)
+
+		// check cache for requested info.json
+		if cmd.Args.CacheOptions.InfoJSON {
+			body, err = cmd.Cache.Get(url)
+			if err == nil {
+				return c.Blob(http.StatusOK, "application/json", body)
+			}
 		}
 
 		// not in cache -> go on
@@ -42,10 +44,11 @@ func InfoHandler() echo.HandlerFunc {
 			if err != nil {
 				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 			}
-
-			err = cmd.Cache.Set(identifier, body)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, "could not set item into cache")
+			if cmd.Args.CacheOptions.Images {
+				err = cmd.Cache.Set(identifier, body)
+				if err != nil {
+					return echo.NewHTTPError(http.StatusInternalServerError, "could not set item into cache")
+				}
 			}
 		}
 
@@ -70,11 +73,15 @@ func InfoHandler() echo.HandlerFunc {
 		}
 
 		// set into cache
-		err = cmd.Cache.Set(url, data)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "could not set item into cache")
+		if cmd.Args.CacheOptions.InfoJSON {
+
+			err = cmd.Cache.Set(url, data)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, "could not set item into cache")
+			}
 		}
 
+		// return info.json
 		return c.Blob(http.StatusOK, "application/json", data)
 	}
 
