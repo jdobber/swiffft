@@ -10,6 +10,11 @@ require (
 	github.com/labstack/echo/v4 v4.1.10
 	github.com/labstack/gommon v0.3.0
 	github.com/minio/minio-go/v6 v6.0.35
+	github.com/vmihailenco/msgpack/v4 v4.2.0
 	github.com/whosonfirst/go-sanitize v0.1.0
 	github.com/wrfly/gua v1.0.1
 )
+
+replace github.com/chai2010/webp => /home/jens/spielwiese/other/github/webp/
+
+replace github.com/jdobber/go-iiif-mod => /home/jens/spielwiese/other/github/go-iiif-mod

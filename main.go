@@ -45,7 +45,12 @@ func main() {
 		}
 	}
 
-	cmd.Cache, err = caches.NewFastCache()
+	if cmd.Args.UseCache {
+		cmd.Cache, err = caches.NewFastCache()
+		log.Println("Use FastCache.")
+	} else {
+		cmd.Cache, err = caches.NewNullCache()
+	}
 	cmd.Check(err)
 
 	/*

@@ -21,15 +21,20 @@ func ImageHandler() echo.HandlerFunc {
 		var err error
 
 		p, _ := NewIIIFQueryParser(c)
+		format, _ := p.GetIIIFParameter("format")
+
+		// check cache
+		url := c.Request().URL.String()
+		body, err = cmd.Cache.Get(url)
+		if err == nil {
+			return c.Blob(http.StatusOK, "image/"+format, body)
+		}
+
+		// not in cache -> go on
 		identifier, _ := p.GetIIIFParameter("identifier")
 
-		if cmd.Cache.Has(identifier) {
-
-			body, err = cmd.Cache.Get(identifier)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, "could not get item from cache")
-			}
-		} else {
+		body, err = cmd.Cache.Get(identifier)
+		if err != nil {
 
 			body, err = sources.ReadFromSources(cmd.Sources, identifier)
 			if err != nil {
@@ -47,7 +52,7 @@ func ImageHandler() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusInternalServerError, "could not load image")
 		}
 
-		level, err := iiiflevel.NewLevelFromConfig(cmd.Config, &cmd.Args.Endpoint)
+		level, err := iiiflevel.NewLevelFromConfig(cmd.Config, cmd.Args.Endpoint)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -76,7 +81,6 @@ func ImageHandler() echo.HandlerFunc {
 
 		}
 
-		format, _ := p.GetIIIFParameter("format")
 		opts := iiifimage.EncodingOptions{
 			Format:  format,
 			Quality: 70,
@@ -87,6 +91,13 @@ func ImageHandler() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 
+		// set into cache
+		err = cmd.Cache.Set(url, data)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "could not set item into cache")
+		}
+
+		// return image
 		return c.Blob(http.StatusOK, "image/"+format, data)
 
 	}

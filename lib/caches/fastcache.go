@@ -1,6 +1,10 @@
 package caches
 
-import "github.com/VictoriaMetrics/fastcache"
+import (
+	"errors"
+
+	"github.com/VictoriaMetrics/fastcache"
+)
 
 type FastCache struct {
 	Cache
@@ -20,7 +24,11 @@ func (c *FastCache) Get(key string) ([]byte, error) {
 
 	var buf []byte
 	buf = c.Client.GetBig(nil, []byte(key))
-	return buf, nil
+	if len(buf) > 0 {
+		return buf, nil
+	}
+	return buf, errors.New("empty value from cache")
+
 }
 
 func (c *FastCache) Set(key string, val []byte) error {

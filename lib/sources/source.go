@@ -4,6 +4,13 @@ import (
 	"errors"
 )
 
+type SourceOptions struct {
+	Sources []string `name:"sources" default:"file" desc:"An ordered list of sources, eg. 'minio' or 'minio file'."`
+
+	MinioOptions
+	FileSourceOptions
+}
+
 type Source interface {
 	Read(key string) ([]byte, error)
 }
