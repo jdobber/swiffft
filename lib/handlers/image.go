@@ -42,7 +42,7 @@ func ImageHandler() echo.HandlerFunc {
 
 			body, err = sources.ReadFromSources(cmd.Sources, identifier)
 			if err != nil {
-				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+				return echo.NewHTTPError(http.StatusNotFound, err.Error())
 			}
 
 			if cmd.Args.CacheOptions.Images {
