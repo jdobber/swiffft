@@ -14,6 +14,7 @@ import (
 	caches "github.com/jdobber/swiffft/lib/caches"
 	"github.com/jdobber/swiffft/lib/cmd"
 	"github.com/jdobber/swiffft/lib/handlers"
+	"github.com/jdobber/swiffft/lib/metrics"
 	sources "github.com/jdobber/swiffft/lib/sources"
 )
 
@@ -57,6 +58,7 @@ func main() {
 		INIT SERVER AND ROUTES
 	*/
 	e := echo.New()
+	e.Use(metrics.HandlerWrapper)
 	e.Use(middleware.CORS())
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "${time_rfc3339} [${method}] ${status} ${uri} ${latency_human} ${bytes_out} \n",
@@ -72,7 +74,7 @@ func main() {
 	//e.GET("/debug/vars", expvar_handler)
 
 	// METRICS Routes
-	e.GET("/metrics", handlers.MetricsHandler())
+	e.GET("/metrics", metrics.Handler())
 
 	// IIIF Routes
 	g := e.Group("/iiif")
