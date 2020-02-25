@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	sources "github.com/jdobber/swiffft/lib/sources"
 	caches "github.com/jdobber/swiffft/lib/caches"
+	sources "github.com/jdobber/swiffft/lib/sources"
 	"github.com/wrfly/gua"
 )
 
