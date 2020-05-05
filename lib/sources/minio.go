@@ -4,19 +4,22 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/jdobber/swiffft/lib/middleware"
 	minio "github.com/minio/minio-go/v6"
 )
 
 type MinioSource struct {
 	Source
-	Client *minio.Client
-	Opts   MinioOptions
+	Client         *minio.Client
+	Opts           MinioOptions
+	RewriteHandler *middleware.RewriteHandler
 }
 
 type MinioOptions struct {
-	Endpoint string `name:"minio.endpoint" desc:"The Minio endpoint to use."`
-	Bucket   string `name:"minio.bucket" desc:"The Minio bucket to use."`
-	UseSSL   bool   `name:"minio.usessl" desc:"Use ssl for Minio."`
+	Endpoint string   `name:"minio.endpoint" desc:"The Minio endpoint to use."`
+	Bucket   string   `name:"minio.bucket" desc:"The Minio bucket to use."`
+	UseSSL   bool     `name:"minio.usessl" desc:"Use ssl for Minio."`
+	Rewrites []string `name:"minio.rewrites" desc:"An ordered list of rewrite rules, eg. ':key::/new/:key/path'."`
 }
 
 func NewMinioSource(opts MinioOptions) (*MinioSource, error) {
@@ -32,8 +35,9 @@ func NewMinioSource(opts MinioOptions) (*MinioSource, error) {
 	}
 
 	c := MinioSource{
-		Client: minioClient,
-		Opts:   opts,
+		Client:         minioClient,
+		Opts:           opts,
+		RewriteHandler: middleware.NewRewriteHandler(opts.Rewrites),
 	}
 
 	return &c, nil
@@ -41,7 +45,12 @@ func NewMinioSource(opts MinioOptions) (*MinioSource, error) {
 
 func (c *MinioSource) Read(key string) ([]byte, error) {
 
-	object, err := c.Client.GetObject(c.Opts.Bucket, key, minio.GetObjectOptions{})
+	ok, to := c.RewriteHandler.ApplyRules(key)
+	if !ok {
+		to = key
+	}
+
+	object, err := c.Client.GetObject(c.Opts.Bucket, to, minio.GetObjectOptions{})
 	defer object.Close()
 
 	if err != nil {
