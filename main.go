@@ -7,6 +7,7 @@ import (
 
 	iiifconfig "github.com/jdobber/go-iiif-mod/lib/config"
 
+	"github.com/labstack/echo-contrib/prometheus"
 	echo "github.com/labstack/echo/v4"
 	middleware "github.com/labstack/echo/v4/middleware"
 	echolog "github.com/labstack/gommon/log"
@@ -14,7 +15,6 @@ import (
 	caches "github.com/jdobber/swiffft/lib/caches"
 	"github.com/jdobber/swiffft/lib/cmd"
 	"github.com/jdobber/swiffft/lib/handlers"
-	"github.com/jdobber/swiffft/lib/metrics"
 	sources "github.com/jdobber/swiffft/lib/sources"
 )
 
@@ -49,8 +49,7 @@ func main() {
 	/*
 		INIT CACHE
 	*/
-
-	if cmd.Args.UseCache {
+	if cmd.Args.CacheOptions.UseCache {
 		cmd.Cache, err = caches.NewFastCache(cmd.Args.CacheOptions.Size)
 		log.Printf("Use FastCache with size %d MB.\n", cmd.Args.CacheOptions.Size)
 	} else {
@@ -62,7 +61,13 @@ func main() {
 		INIT SERVER AND ROUTES
 	*/
 	e := echo.New()
-	e.Use(metrics.HandlerWrapper)
+
+	if cmd.Args.MetricsOptions.EnableMetrics {
+		log.Printf("Enable metrics with namespace=%s.\n", cmd.Args.MetricsOptions.Namespace)
+		p := prometheus.NewPrometheus(cmd.Args.MetricsOptions.Namespace, nil)
+		p.Use(e)
+	}
+
 	e.Use(middleware.CORS())
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "${time_rfc3339} [${method}] ${status} ${uri} ${latency_human} ${bytes_out} \n",
@@ -74,11 +79,6 @@ func main() {
 	e.GET("/ping", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, "pong")
 	})
-
-	//e.GET("/debug/vars", expvar_handler)
-
-	// METRICS Routes
-	e.GET("/metrics", metrics.Handler())
 
 	// IIIF Routes
 	g := e.Group("/iiif")

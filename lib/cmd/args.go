@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	caches "github.com/jdobber/swiffft/lib/caches"
+	"github.com/jdobber/swiffft/lib/metrics"
 	sources "github.com/jdobber/swiffft/lib/sources"
 	"github.com/wrfly/gua"
 )
@@ -16,6 +17,7 @@ type CommandOptions struct {
 
 	sources.SourceOptions
 	caches.CacheOptions
+	metrics.MetricsOptions
 }
 
 func Init() CommandOptions {
