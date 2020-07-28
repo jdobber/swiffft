@@ -3,6 +3,7 @@ package sources
 import (
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/jdobber/swiffft/lib/middleware"
 	minio "github.com/minio/minio-go/v6"
@@ -43,19 +44,33 @@ func NewMinioSource(opts MinioOptions) (*MinioSource, error) {
 	return &c, nil
 }
 
-func (c *MinioSource) Read(key string) ([]byte, error) {
+func (c *MinioSource) Read(key string) (*SourceInfo, error) {
 
 	ok, to := c.RewriteHandler.ApplyRules(key)
 	if !ok {
 		to = key
 	}
 
+	sourceInfo := SourceInfo{}
+
+	info, err := c.Client.StatObject(c.Opts.Bucket, to, minio.StatObjectOptions{})
+	if err != nil {
+		return nil, err
+
+	}
+
+	sourceInfo.LastModified = info.LastModified.Format(time.RFC1123Z)
+
 	object, err := c.Client.GetObject(c.Opts.Bucket, to, minio.GetObjectOptions{})
 	defer object.Close()
-
 	if err != nil {
 		return nil, err
 	}
 
-	return ioutil.ReadAll(object)
+	sourceInfo.Payload, err = ioutil.ReadAll(object)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sourceInfo, nil
 }

@@ -1,6 +1,8 @@
 package sources
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
 )
 
@@ -11,20 +13,52 @@ type SourceOptions struct {
 	FileSourceOptions
 }
 
-type Source interface {
-	Read(key string) ([]byte, error)
+// SourceInfo ...
+type SourceInfo struct {
+	Payload      []byte
+	LastModified string
+	ETag         string
 }
 
-func ReadFromSources(sources []Source, key string) ([]byte, error) {
+type Source interface {
+	Read(key string) (*SourceInfo, error)
+}
+
+func ReadFromSources(sources []Source, key string) (*SourceInfo, error) {
 
 	for _, s := range sources {
 
-		body, err := s.Read(key)
+		payload, err := s.Read(key)
 		if err == nil {
-			return body, err
+			return payload, err
 		}
 	}
 
 	return nil, errors.New("could not read item from configured sources")
 
+}
+
+// Pack ...
+func Pack(sourceInfo *SourceInfo) ([]byte, error) {
+
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(sourceInfo)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+
+}
+
+// Unpack ...
+func Unpack(b []byte) (*SourceInfo, error) {
+	var sourceInfo SourceInfo
+	buf := bytes.NewBuffer(b)
+	dec := gob.NewDecoder(buf)
+	err := dec.Decode(&sourceInfo)
+	if err != nil {
+		return nil, err
+	}
+	return &sourceInfo, nil
 }

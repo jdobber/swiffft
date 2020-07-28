@@ -2,6 +2,8 @@ package sources
 
 import (
 	"io/ioutil"
+	"os"
+	"time"
 )
 
 type FileSource struct {
@@ -22,8 +24,28 @@ func NewFileSource(prefix string) (*FileSource, error) {
 	return &c, nil
 }
 
-func (c *FileSource) Read(key string) ([]byte, error) {
+func (c *FileSource) Read(key string) (*SourceInfo, error) {
 
-	return ioutil.ReadFile(c.prefix + "/" + key)
+	filename := c.prefix + "/" + key
+
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	sourceInfo := SourceInfo{}
+
+	if info, err := f.Stat(); err == nil {
+
+		sourceInfo.LastModified = info.ModTime().Format(time.RFC1123Z)
+	}
+
+	sourceInfo.Payload, err = ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sourceInfo, nil
 
 }
